@@ -1,0 +1,19 @@
+{
+    "develop": {
+        "awscloudformation": {
+            "AuthRoleName": "big-data-develop-20190912142841-authRole",
+            "UnauthRoleArn": "arn:aws:iam::009834006932:role/big-data-develop-20190912142841-unauthRole",
+            "AuthRoleArn": "arn:aws:iam::009834006932:role/big-data-develop-20190912142841-authRole",
+            "Region": "us-east-1",
+            "DeploymentBucketName": "big-data-develop-20190912142841-deployment",
+            "UnauthRoleName": "big-data-develop-20190912142841-unauthRole",
+            "StackName": "big-data-develop-20190912142841",
+            "StackId": "arn:aws:cloudformation:us-east-1:009834006932:stack/big-data-develop-20190912142841/7811c040-d550-11e9-b2df-0a200f00c284"
+        },
+        "categories": {
+            "auth": {
+                "bigdata1dafde51": {}
+            }
+        }
+    }
+}

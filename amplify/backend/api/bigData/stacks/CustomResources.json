@@ -1,0 +1,180 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "An auto-generated nested stack.",
+	"Metadata": {},
+	"Parameters": {
+		"AppSyncApiId": {
+			"Type": "String",
+			"Description": "The id of the AppSync API associated with this project."
+		},
+		"AppSyncApiName": {
+			"Type": "String",
+			"Description": "The name of the AppSync API",
+			"Default": "AppSyncSimpleTransform"
+		},
+		"env": {
+			"Type": "String",
+			"Description": "The environment name. e.g. Dev, Test, or Production",
+			"Default": "NONE"
+		},
+		"S3DeploymentBucket": {
+			"Type": "String",
+			"Description": "The S3 bucket containing all deployment assets for the project."
+		},
+		"S3DeploymentRootKey": {
+			"Type": "String",
+			"Description": "An S3 key relative to the S3DeploymentBucket that points to the root\nof the deployment directory."
+		}
+	},
+	"Resources": {
+		"AppSyncAthenaRole": {
+			"Type": "AWS::IAM::Role",
+			"Properties": {
+			  "RoleName": {
+				"Fn::Join": [
+				  "-",
+				  ["appSyncAthenaRole", { "Ref": "AppSyncApiId" }, { "Ref": "env" }]
+				]
+			  },
+			  "ManagedPolicyArns": [
+				"arn:aws:iam::aws:policy/AmazonAthenaFullAccess",
+				"arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+			  ],
+			  "AssumeRolePolicyDocument": {
+				"Version": "2012-10-17",
+				"Statement": [
+				  {
+					"Effect": "Allow",
+					"Principal": {
+					  "Service": ["appsync.amazonaws.com"]
+					},
+					"Action": ["sts:AssumeRole"]
+				  }
+				]
+			  }
+			}
+		},		
+		"DataSourceAthenaAPI": {
+			"Type": "AWS::AppSync::DataSource",
+			"Properties": {
+			  "ApiId": {
+				"Ref": "AppSyncApiId"
+			  },
+			  "Name": "AthenaAPI",
+			  "Description": "Athena API",
+			  "Type": "HTTP",
+			  "ServiceRoleArn": { "Fn::GetAtt": ["AppSyncAthenaRole", "Arn"] },
+			  "HttpConfig": {
+				"Endpoint": {
+				  "Fn::Join": [
+					".",
+					["https://athena", { "Ref": "AWS::Region" }, "amazonaws.com/"]
+				  ]
+				},
+				"AuthorizationConfig": {
+				  "AuthorizationType": "AWS_IAM",
+				  "AwsIamConfig": {
+					"SigningRegion": { "Ref": "AWS::Region" },
+					"SigningServiceName": "athena"
+				  }
+				}
+			  }
+			}
+		  },
+		  "DataSourceNone": {
+			"Type": "AWS::AppSync::DataSource",
+			"Properties": {
+			  "ApiId": {
+				"Ref": "AppSyncApiId"
+			  },
+			  "Name": "None",
+			  "Description": "None",
+			  "Type": "NONE"
+			}
+		  },	
+		  "QueryStartQueryResolver": {
+			"Type": "AWS::AppSync::Resolver",
+			"Properties": {
+			  "ApiId": {
+				"Ref": "AppSyncApiId"
+			  },
+			  "DataSourceName": { "Fn::GetAtt": ["DataSourceAthenaAPI", "Name"] },
+			  "TypeName": "Query",
+			  "FieldName": "startQuery",
+			  "RequestMappingTemplateS3Location": {
+				"Fn::Sub": [
+				  "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Query.startQuery.req.vtl",
+				  {
+					"S3DeploymentBucket": { "Ref": "S3DeploymentBucket" },
+					"S3DeploymentRootKey": { "Ref": "S3DeploymentRootKey" }
+				  }
+				]
+			  },
+			  "ResponseMappingTemplateS3Location": {
+				"Fn::Sub": [
+				  "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Query.startQuery.res.vtl",
+				  {
+					"S3DeploymentBucket": { "Ref": "S3DeploymentBucket" },
+					"S3DeploymentRootKey": { "Ref": "S3DeploymentRootKey" }
+				  }
+				]
+			  }
+			}
+		  },
+		  "AnnounceQueryResultResolver": {
+			"Type": "AWS::AppSync::Resolver",
+			"Properties": {
+			  "ApiId": {
+				"Ref": "AppSyncApiId"
+			  },
+			  "DataSourceName": { "Fn::GetAtt": ["DataSourceNone", "Name"] },
+			  "TypeName": "Mutation",
+			  "FieldName": "announceQueryResult",
+			  "RequestMappingTemplateS3Location": {
+				"Fn::Sub": [
+				  "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.announceQueryResult.req.vtl",
+				  {
+					"S3DeploymentBucket": { "Ref": "S3DeploymentBucket" },
+					"S3DeploymentRootKey": { "Ref": "S3DeploymentRootKey" }
+				  }
+				]
+			  },
+			  "ResponseMappingTemplateS3Location": {
+				"Fn::Sub": [
+				  "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Mutation.announceQueryResult.res.vtl",
+				  {
+					"S3DeploymentBucket": { "Ref": "S3DeploymentBucket" },
+					"S3DeploymentRootKey": { "Ref": "S3DeploymentRootKey" }
+				  }
+				]
+			  }
+			}
+		  }		  		  	  
+	},
+	"Conditions": {
+		"HasEnvironmentParameter": {
+			"Fn::Not": [
+				{
+					"Fn::Equals": [
+						{
+							"Ref": "env"
+						},
+						"NONE"
+					]
+				}
+			]
+		},
+		"AlwaysFalse": {
+			"Fn::Equals": [
+				"true",
+				"false"
+			]
+		}
+	},
+	"Outputs": {
+		"EmptyOutput": {
+			"Description": "An empty output. You may delete this if you have at least one resource above.",
+			"Value": ""
+		}
+	}
+}
